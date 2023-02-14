@@ -26,12 +26,14 @@ class FvCB:
         Assigns values to the activation energies, with suffix "_DHa" [J mol-1].
         Assigns ΔHd and ΔS for photosynthetic temperature inhibition.
         Assigns constants Oi and gas_constant
+        
         Inputs [Optional]
         ------
         Kc_25:  Michaelis constant for CO2 [μmol mol-1]
         Ko_25:  Michaelis constant for 02 [mmol mol-1]
         extTp:  Rate of triose phosphate utilization [μmol m-2 s-1]
         sim_return: Output of the FvCB model ||1: only A, other number: all 5 parameters||
+        
         Outputs
         -------
         []
@@ -69,6 +71,7 @@ class FvCB:
         Gx: CO2 compensation point 'Γ*' [ppm]
         Kc: Michaelis constant for CO2 [μmol mol-1]
         Ko: Michaelis constant for 02 [mmol mol-1]
+        
         Outputs
         ------
         Ac: Rubisco limited gross assimilation rate [μmol m-2 s-1]
@@ -83,11 +86,13 @@ class FvCB:
         """
         The rate of electron transport is the smaller root of the quadratic equation:
         Θ * J^2 - (Iph2 + Jmax)* J + Ips2 * Jmax = 0
+        
         Inputs
         ------
         Jmax: Maximum electron transport rate [μmol m-2 s-1]
         par: Photosynthetically active radiation [mmol m-2 s-1]
         theta: Curvature parameter, 'Θ' [-]
+        
         Outputs
         ------
         J: Electron transport tate [μmol m-2 s-1]
@@ -105,11 +110,13 @@ class FvCB:
     def light_limited(self, J, Ci, Gx):
         """
         Light limited photosynthesis. Or assimilation limited by RuBP regeneration
+        
         Inputs
         ------
         J: Electron transport rate ||Through calling 'electron_transport_rate' method|| [μmol m-2 s-1]
         Ci: Intercellular CO2 [ppm]
         Gx: CO2 compensation point, 'Γ*' [ppm]
+        
         Outputs
         ------
         Aj: Light limited gross assimilation rate [μmol m-2 s-1]
@@ -121,10 +128,12 @@ class FvCB:
     def arrhenius(self, temp, DHparam):
         """
         Arrhenius function for parameter temperature correction
+        
         Inputs
         ------
         temp: Temperature [oC]
         DHparam: Activation energy of the corresponding parameter ||Assigned in __init__|| [J mol-1]
+        
         Output
         ------
         t_corr: Temperature correction for corresponding parameter [-]
@@ -138,9 +147,11 @@ class FvCB:
         """
         Extra temperature correction for Vcmax, Jmax and Rd. This method is used to correct for 
         higher temepreatures
+        
         Inputs
         ------
         temp: Temperature  [oC]
+        
         Output
         ------
         hot_inhib: parameter for thermal breakdown of biochemical processes above 25 oC
@@ -160,7 +171,8 @@ class FvCB:
         3. Calculation of light limited assimilation rate
         4. Calculation of Triose phosphate based limited assimilation rate (product based)
         5. Calculate gross assimilation as the minimum of all the three rates above
-        6. return 1 = A (Gross assimilation - Rd) or all the rates + Rd (A, Ac, Aj, Ap, Rd)
+        6. return (1) = A (Gross assimilation - Rd), (2) = or all the rates + Rd (A, Ac, Aj, Ap, Rd), (3) = A, Kc, Ko, Gx, Vcmax, Jmax, Rd
+        
         Inputs
         ------
         CO2: CO2 concentration [ppm]
@@ -171,11 +183,15 @@ class FvCB:
         Gx_25: CO2 compensation point, 'Γ*'at 25 oC [ppm]
         theta: Curvature parameter, 'Θ' [-]
         Rd_25: Dark respiration at 25 oC [μmol m-2 s-1]
+        
         Output
         ------
+        (based on the 'sim_return' parameter value)
         A: minimum of light, rubisco and product limited photosynthesis, minus dark respiration
-        OR (based on the 'sim_return' parameter value)
+        OR 
         A, Ac, Aj, Ap, Rd
+        OR
+        A, Kc, Ko, Gx, Vcmax, Jmax, Rd
         """
 
         # Calculate temperature correction for all parameters
@@ -200,5 +216,10 @@ class FvCB:
         
         GASS = min(min(Ac, Aj), Ap)
         A = GASS - Rd
-        #return Ac, Aj, Ap, A
-        return A if self.sim_return == 1 else A, Ac, Aj, Ap, Rd
+        
+        if (self.sim_return == 1):
+            return A
+        elif (self.sim_return == 2):
+            return A, Ac, Aj, Ap, Rd
+        else:
+            return A, Kc, Ko, Gx, Vcmax, Jmax, Rd
